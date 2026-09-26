@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { summarize, useStore } from "@/lib/store";
+import { computeBalances, summarize, useStore } from "@/lib/store";
 import { daysInMonth, formatCompact, formatMonth, formatRupiah, monthKey, shiftMonth, todayISO } from "@/lib/format";
-import type { CategoryKind } from "@/lib/types";
+import { ACCOUNT_TYPE_LABEL, type Account, type CategoryKind } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Segmented } from "@/components/ui";
 import { MonthPicker } from "@/components/month-picker";
 
 export function PelaporanView() {
-  const { transactions, categories } = useStore();
+  const { transactions, categories, accounts } = useStore();
   const [month, setMonth] = useState(() => monthKey(todayISO()));
   const [kind, setKind] = useState<CategoryKind>("expense");
 
@@ -36,8 +36,27 @@ export function PelaporanView() {
       return { key, ...summarize(transactions.filter((t) => monthKey(t.date) === key)) };
     });
 
-    return { summary, prev, breakdown, kindTotal, daily, trend };
-  }, [transactions, categories, month, kind]);
+    // Per sumber dana: saldo awal bulan -> arus bulan ini -> saldo akhir bulan.
+    const opening = computeBalances(accounts, transactions.filter((t) => monthKey(t.date) < month));
+    const closing = computeBalances(accounts, transactions.filter((t) => monthKey(t.date) <= month));
+    const perAccount = [...accounts]
+      .sort((a, b) => a.order - b.order)
+      .map((a) => {
+        let income = 0, expense = 0, transferIn = 0, transferOut = 0;
+        for (const t of monthTx) {
+          if (t.type === "income" && t.accountId === a.id) income += t.amount;
+          else if (t.type === "expense" && t.accountId === a.id) expense += t.amount;
+          else if (t.type === "transfer") {
+            if (t.accountId === a.id) transferOut += t.amount;
+            if (t.toAccountId === a.id) transferIn += t.amount;
+          }
+        }
+        return { account: a, opening: opening.get(a.id) ?? 0, closing: closing.get(a.id) ?? 0, income, expense, transferIn, transferOut };
+      })
+      .filter((r) => !r.account.archived || r.income || r.expense || r.transferIn || r.transferOut);
+
+    return { summary, prev, breakdown, kindTotal, daily, trend, perAccount };
+  }, [transactions, categories, accounts, month, kind]);
 
   const expenseDelta = data.prev.expense ? (data.summary.expense - data.prev.expense) / data.prev.expense : null;
   const savingRate = data.summary.income ? data.summary.net / data.summary.income : null;
@@ -101,6 +120,16 @@ export function PelaporanView() {
           </Card>
         </div>
 
+        {/* Per account */}
+        <div>
+          <SectionTitle>Per sumber dana</SectionTitle>
+          <div className="space-y-3">
+            {data.perAccount.map((r) => (
+              <AccountReport key={r.account.id} row={r} />
+            ))}
+          </div>
+        </div>
+
         {/* Daily expense */}
         <div>
           <SectionTitle>Pengeluaran harian</SectionTitle>
@@ -126,6 +155,81 @@ export function PelaporanView() {
         </div>
       </div>
     </>
+  );
+}
+
+interface AccountRow {
+  account: Account;
+  opening: number;
+  closing: number;
+  income: number;
+  expense: number;
+  transferIn: number;
+  transferOut: number;
+}
+
+function AccountReport({ row }: { row: AccountRow }) {
+  const { account: a, opening, closing, income, expense, transferIn, transferOut } = row;
+  const change = closing - opening;
+  const inflow = income + transferIn;
+  const outflow = expense + transferOut;
+  const max = Math.max(1, inflow, outflow);
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl text-lg" style={{ backgroundColor: `${a.color}22` }}>
+          {a.icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{a.name}</p>
+          <p className="text-xs text-muted">{ACCOUNT_TYPE_LABEL[a.type]}</p>
+        </div>
+        <div className="text-right">
+          <p className="tabular font-semibold">{formatRupiah(closing)}</p>
+          <p className={`tabular text-xs ${change < 0 ? "text-expense" : change > 0 ? "text-income" : "text-muted"}`}>
+            {change > 0 ? "+" : ""}
+            {change === 0 ? "tidak berubah" : formatRupiah(change)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="w-12 text-muted">Masuk</span>
+          <div className="h-2 flex-1 rounded-full bg-surface-2">
+            <div className="h-2 rounded-full bg-income" style={{ width: `${(inflow / max) * 100}%` }} />
+          </div>
+          <span className="tabular w-24 text-right font-medium text-income">{formatRupiah(inflow)}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="w-12 text-muted">Keluar</span>
+          <div className="h-2 flex-1 rounded-full bg-surface-2">
+            <div className="h-2 rounded-full bg-expense" style={{ width: `${(outflow / max) * 100}%` }} />
+          </div>
+          <span className="tabular w-24 text-right font-medium text-expense">{formatRupiah(outflow)}</span>
+        </div>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-border pt-3 text-xs">
+        <dt className="text-muted">Saldo awal bulan</dt>
+        <dd className="tabular text-right">{formatRupiah(opening)}</dd>
+        <dt className="text-muted">Pemasukan</dt>
+        <dd className="tabular text-right text-income">+{formatRupiah(income)}</dd>
+        <dt className="text-muted">Pengeluaran</dt>
+        <dd className="tabular text-right text-expense">−{formatRupiah(expense)}</dd>
+        {(transferIn > 0 || transferOut > 0) && (
+          <>
+            <dt className="text-muted">Transfer masuk / keluar</dt>
+            <dd className="tabular text-right text-transfer">
+              +{formatRupiah(transferIn)} / −{formatRupiah(transferOut)}
+            </dd>
+          </>
+        )}
+        <dt className="font-medium">Saldo akhir bulan</dt>
+        <dd className="tabular text-right font-semibold">{formatRupiah(closing)}</dd>
+      </dl>
+    </Card>
   );
 }
 
