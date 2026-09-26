@@ -1,5 +1,12 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import {
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
+  type Auth,
+} from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -26,7 +33,19 @@ function app() {
 }
 
 export function firebaseAuth() {
-  auth ??= getAuth(app());
+  if (!auth) {
+    const a = app();
+    try {
+      // Keep the session across app restarts: IndexedDB first, localStorage as fallback.
+      auth = initializeAuth(a, {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+        popupRedirectResolver: browserPopupRedirectResolver,
+      });
+    } catch {
+      // Already initialized (e.g. HMR in dev).
+      auth = getAuth(a);
+    }
+  }
   return auth;
 }
 

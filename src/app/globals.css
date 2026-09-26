@@ -71,10 +71,11 @@ body {
   display: none;
 }
 
-.pb-safe {
+/* In the utilities layer so they don't silently override other padding utilities. */
+@utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
-.pt-safe {
+@utility pt-safe {
   padding-top: env(safe-area-inset-top);
 }
 

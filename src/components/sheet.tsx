@@ -48,7 +48,7 @@ export function Sheet({
             <CloseIcon className="size-5" />
           </button>
         </div>
-        <div className="pb-safe overflow-y-auto px-5 pb-5">{children}</div>
+        <div className="overflow-y-auto px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+1.75rem)]">{children}</div>
       </div>
     </div>
   );
