@@ -95,7 +95,7 @@ export function DashboardView() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className={`grid gap-5 ${budgets.length ? "md:grid-cols-2" : ""}`}>
           {/* Top expenses */}
           <div>
             <SectionTitle>Pengeluaran terbesar bulan ini</SectionTitle>
@@ -117,35 +117,36 @@ export function DashboardView() {
             </Card>
           </div>
 
-          {/* Budgets */}
-          <div>
-            <SectionTitle>Budget</SectionTitle>
-            <Card className="space-y-3 p-4">
-              {budgets.length === 0 && <p className="text-sm text-muted">Atur budget di Setting → Kategori.</p>}
-              {budgets.map(({ category, spent, budget }) => {
-                const pct = Math.min(100, (spent / budget) * 100);
-                const over = spent > budget;
-                return (
-                  <div key={category.id}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="truncate">
-                        {category.icon} {category.name}
-                      </span>
-                      <span className={`tabular text-xs ${over ? "font-semibold text-expense" : "text-muted"}`}>
-                        {formatRupiah(spent)} / {formatRupiah(budget)}
-                      </span>
+          {/* Budgets — only shown once a category has a budget */}
+          {budgets.length > 0 && (
+            <div>
+              <SectionTitle>Budget</SectionTitle>
+              <Card className="space-y-3 p-4">
+                {budgets.map(({ category, spent, budget }) => {
+                  const pct = Math.min(100, (spent / budget) * 100);
+                  const over = spent > budget;
+                  return (
+                    <div key={category.id}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="truncate">
+                          {category.icon} {category.name}
+                        </span>
+                        <span className={`tabular text-xs ${over ? "font-semibold text-expense" : "text-muted"}`}>
+                          {formatRupiah(spent)} / {formatRupiah(budget)}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-surface-2">
+                        <div
+                          className={`h-2 rounded-full ${over ? "bg-expense" : pct > 80 ? "bg-amber-500" : "bg-primary"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 rounded-full bg-surface-2">
-                      <div
-                        className={`h-2 rounded-full ${over ? "bg-expense" : pct > 80 ? "bg-amber-500" : "bg-primary"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </Card>
-          </div>
+                  );
+                })}
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Recent */}
