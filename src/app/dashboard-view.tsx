@@ -48,17 +48,23 @@ export function DashboardView() {
           <p className="text-sm opacity-80">Total saldo</p>
           <p className="tabular mt-1 text-3xl font-bold tracking-tight">{formatRupiah(total)}</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white/15 p-3">
-              <p className="flex items-center gap-1 text-xs opacity-85">
-                <ArrowDownIcon className="size-3.5" /> Pemasukan
+            <div className="rounded-2xl bg-surface p-3 text-foreground shadow-sm">
+              <p className="flex items-center gap-1.5 text-xs text-muted">
+                <span className="grid size-5 place-items-center rounded-full bg-income/15 text-income">
+                  <ArrowDownIcon className="size-3" />
+                </span>
+                Pemasukan
               </p>
-              <p className="tabular mt-0.5 font-semibold">{formatRupiah(month.income)}</p>
+              <p className="tabular mt-1 font-semibold text-income">{formatRupiah(month.income)}</p>
             </div>
-            <div className="rounded-2xl bg-white/15 p-3">
-              <p className="flex items-center gap-1 text-xs opacity-85">
-                <ArrowUpIcon className="size-3.5" /> Pengeluaran
+            <div className="rounded-2xl bg-surface p-3 text-foreground shadow-sm">
+              <p className="flex items-center gap-1.5 text-xs text-muted">
+                <span className="grid size-5 place-items-center rounded-full bg-expense/15 text-expense">
+                  <ArrowUpIcon className="size-3" />
+                </span>
+                Pengeluaran
               </p>
-              <p className="tabular mt-0.5 font-semibold">{formatRupiah(month.expense)}</p>
+              <p className="tabular mt-1 font-semibold text-expense">{formatRupiah(month.expense)}</p>
             </div>
           </div>
         </section>
