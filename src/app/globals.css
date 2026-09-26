@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f6f5;
+  --surface: #ffffff;
+  --surface-2: #eef1f0;
+  --foreground: #111816;
+  --muted: #64706c;
+  --border: #e1e6e4;
+  --primary: #0f766e;
+  --primary-soft: #d5efeb;
+  --primary-foreground: #ffffff;
+  --income: #15803d;
+  --expense: #dc2626;
+  --transfer: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b100f;
+    --surface: #141b19;
+    --surface-2: #1c2522;
+    --foreground: #e7eeec;
+    --muted: #8c9a96;
+    --border: #25302d;
+    --primary: #2dd4bf;
+    --primary-soft: #133a35;
+    --primary-foreground: #04201c;
+    --income: #4ade80;
+    --expense: #f87171;
+    --transfer: #60a5fa;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-transfer: var(--transfer);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overscroll-behavior-y: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet {
+  animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-fade {
+  animation: fade-in 180ms ease-out;
+}

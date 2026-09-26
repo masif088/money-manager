@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Draft — see docs/rancangan-data.md. Each user can only touch their own subtree.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /accounts/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.type in ['cash', 'bank', 'ewallet', 'credit', 'investment']
+          && request.resource.data.initialBalance is number;
+      }
+
+      match /categories/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name is string
+          && request.resource.data.kind in ['income', 'expense'];
+      }
+
+      match /transactions/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.type in ['income', 'expense', 'transfer']
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.date is timestamp
+          && request.resource.data.accountId is string;
+      }
+    }
+  }
+}
